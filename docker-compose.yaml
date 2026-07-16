@@ -1,0 +1,90 @@
+services:
+  wordpress:
+    image: wordpress:7.0-php8.2-apache
+    container_name: wordpress
+    restart: always
+    environment:
+      WORDPRESSDBHOST: db
+      WORDPRESSDBUSER: activema_matthew
+      WORDPRESSDBPASSWORD: dcrvx1000
+      WORDPRESSDBNAME: activema_wpcomfy
+    ports:
+      - "0.0.0.0:8080:80"
+    volumes:
+      - /opt/wp-comfy/wp-data:/var/www/html
+
+  db:
+    image: mariadb:10.6
+    container_name: wordpress-db
+    restart: always
+    environment:
+      MARIADB_DATABASE: activema_wpcomfy
+      MARIADB_USER: activema_matthew
+      MARIADB_PASSWORD: dcrvx1000
+      MARIADB_ROOT_PASSWORD: dcrvx1000
+    volumes:
+      - /opt/wp-comfy/db-data:/var/lib/mysql
+
+  redis:
+    image: redis:7
+    container_name: redis
+    restart: always
+    ports:
+      - "0.0.0.0:6379:6379"
+
+  python-orchestrator:
+    build:
+      context: /opt/wp-comfy/orchestrator
+      dockerfile: Dockerfile
+    container_name: python-orchestrator
+    restart: always
+    environment:
+      WORDPRESS_URL: http://wordpress:8080
+      WORDPRESS_USER: matthew
+      WORDPRESSAPPPASSWORD: dcrvx1000
+      REDIS_URL: redis://redis:6379/0
+      COMFYUI_URL: http://127.0.0.1:8188
+    depends_on:
+      - wordpress
+      - redis
+#      - comfyui
+    ports:
+      - "0.0.0.0:8000:8000"  # FastAPI/Flask
+
+  celery-worker:
+    build:
+      context: /opt/wp-comfy/orchestrator
+      dockerfile: Dockerfile
+    container_name: celery-worker
+    restart: always
+    environment:
+      WORDPRESS_URL: http://wordpress:8080
+      WORDPRESS_USER: matthew
+      WORDPRESSAPPPASSWORD: dcrvx1000
+      REDIS_URL: redis://redis:6379/0
+      COMFYUI_URL: http://127.0.0.1:8188
+    depends_on:
+      - redis
+#      - comfyui
+    command: >
+      celery -A tasks.celery_app worker
+
+#  comfyui:
+#    build:
+#      context: ./comfyui
+#      dockerfile: Dockerfile
+#    container_name: comfyui
+#    restart: always
+#    ports:
+#      - "8188:8188"
+#    volumes:
+#      - ./comfyui/models:/opt/comfyui/models
+#      - ./comfyui/output:/opt/comfyui/output
+#    deploy:
+#      resources:
+#        reservations:
+#          devices:
+#            - driver: nvidia
+#              count: all
+#              capabilities: [gpu]
+
