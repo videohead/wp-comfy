@@ -18,18 +18,35 @@
  * @package WordPress
  */
 
+// Load .env file
+$envPath = dirname(__DIR__) . '/.env';
+if (file_exists($envPath)) {
+    $lines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        if (strpos(trim($line), '#') === 0) continue;
+        if (strpos($line, '=') !== false) {
+            list($key, $value) = explode('=', $line, 2);
+            $key = trim($key);
+            $value = trim($value);
+            putenv("$key=$value");
+            $_ENV[$key] = $value;
+            $_SERVER[$key] = $value;
+        }
+    }
+}
+
 // ** Database settings - You can get this info from your web host ** //
 /** The name of the database for WordPress */
-define( 'DB_NAME', 'wpcomfy' );
+define( 'DB_NAME',     getenv('WP_DATABASE_NAME') ?: 'wordpress' );
 
 /** Database username */
-define( 'DB_USER', '' );
+define( 'DB_USER',     getenv('WP_DATABASE_USERNAME') ?: 'root' );
 
 /** Database password */
-define( 'DB_PASSWORD', '' );
+define( 'DB_PASSWORD', getenv('WP_DATABASE_PASSWORD') ?: '' );
 
 /** Database hostname */
-define( 'DB_HOST', 'db' );
+define( 'DB_HOST',     getenv('DB_HOST') ?: 'db' );
 
 /** Database charset to use in creating database tables. */
 define( 'DB_CHARSET', 'utf8mb4' );
