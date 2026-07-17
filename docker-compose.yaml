@@ -24,6 +24,7 @@ services:
       MARIADB_PASSWORD: ${DB_PASSWORD}
     volumes:
       - /opt/wp-comfy/db-data:/var/lib/mysql
+      - ./backup.sql:/docker-entrypoint-initdb.d/backup.sql:ro
 
   redis:
     image: redis:7

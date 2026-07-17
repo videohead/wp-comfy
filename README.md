@@ -82,6 +82,57 @@ POST it to ComfyUI’s API endpoint for workflows (depends on your ComfyUI API s
 You’ll likely adjust type and inputs to match your actual nodes (e.g. Stable Video Diffusion, ControlNet, etc.), but this gives you a clear structure.
 
 
+# Starting and Stopping
+docker compose up -d
+docker compose up
+docker compose down
+
+# First Time Build
+
+1. Copy `.env.example` to `.env` (if one exists) and fill in your values:
+   ```bash
+   cp .env.example .env   # adjust WP_USERNAME, WP_DATABASE_PASSWORD, DB_NAME, etc.
+   ```
+2. Create the data directories that WordPress and MariaDB will persist to:
+   ```bash
+   mkdir -p /opt/wp-comfy/wordpress /opt/wp-comfy/db-data
+   ```
+3. If you have an existing database dump, place it at `backup.sql` (it is mounted into the db container on first start).
+4. Bring up all services (ComfyUI is commented out by default — uncomment in `docker-compose.yaml` when you have a GPU node):
+   ```bash
+   docker compose up -d
+   ```
+5. Verify everything is running:
+   ```bash
+   docker compose ps
+   ```
+6. Visit WordPress at `http://localhost` and configure your plugins / SCF fields.
+
+# Rebuild safely (don't overwrite wordpress and its db)
+
+Your WordPress files live in `/opt/wp-comfy/wordpress` and the database in `/opt/wp-comfy/db-data` — both are mounted as volumes, so they survive container rebuilds.
+
+To rebuild without losing data:
+
+1. Rebuild only the services that changed (e.g. the orchestrator):
+   ```bash
+   docker compose up -d --build python-orchestrator celery-worker
+   ```
+2. To rebuild everything (safe — volumes are preserved):
+   ```bash
+   docker compose down
+   docker compose up -d --build
+   ```
+3. **Never** delete the `wordpress` or `db-data` volume directories, and **never** mount a fresh `backup.sql` over an already-initialized database unless you want to wipe it.
+
+To reset the database (destructive — wipes all WordPress data):
+```bash
+docker compose down
+rm -rf /opt/wp-comfy/db-data/*
+docker compose up -d   # backup.sql will re-initialize the DB
+
+
+
 
 
 
