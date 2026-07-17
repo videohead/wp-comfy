@@ -1,14 +1,18 @@
 import os
+from dotenv import load_dotenv
+
+load_dotenv()  # Load .env file before any os.getenv() calls
+
 import requests
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from celery import Celery
 from celery.result import AsyncResult
 
-WORDPRESS_URL = os.getenv("WORDPRESS_URL", "http://wordpress:8080")
-WORDPRESS_USER = os.getenv("WORDPRESS_USER")
-WORDPRESS_APP_PASSWORD = os.getenv("WORDPRESS_APP_PASSWORD")
-COMFYUI_URL = os.getenv("COMFYUI_URL", "http://127.0.0.1:8188")
+WORDPRESS_URL = os.getenv("WORDPRESS_URL", "http://wordpress:80")
+WORDPRESS_USER = os.getenv("WP_USERNAME")
+WORDPRESS_APP_PASSWORD = os.getenv("WP_APP_PASSWORD")
+COMFYUI_URL = os.getenv("COMFY_URL", "http://127.0.0.1:8188")
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 
 celery_app = Celery(

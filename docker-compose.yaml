@@ -5,9 +5,9 @@ services:
     restart: always
     environment:
       WORDPRESSDBHOST: db
-      WORDPRESSDBUSER: /run
-      WORDPRESSDBPASSWORD: /run/secrets/wp_databasepassword
-      WORDPRESSDBNAME: /run/secrets/wp_databasename
+      WORDPRESSDBUSER: ${WP_USERNAME}
+      WORDPRESSDBPASSWORD: ${WP_DATABASE_PASSWORD}
+      WORDPRESSDBNAME: ${WP_DATABASE_NAME}
     ports:
       - "0.0.0.0:80:80"
     volumes:
@@ -18,10 +18,10 @@ services:
     container_name: wordpress-db
     restart: always
     environment:
-      MARIADB_DATABASE: /run/secrets/db_name
-      MARIADB_USERNAME: /run/secrets/db_username
-      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
-      MARIADB_PASSWORD_FILE: /run/secrets/db_password
+      MARIADB_DATABASE: ${DB_NAME}
+      MARIADB_USERNAME: ${DB_USERNAME}
+      MARIADB_ROOT_PASSWORD_FILE: ${DB_ROOT_PASSWORD}
+      MARIADB_PASSWORD: ${DB_PASSWORD}
     volumes:
       - /opt/wp-comfy/db-data:/var/lib/mysql
 
@@ -40,8 +40,8 @@ services:
     restart: always
     environment:
       WORDPRESS_URL: http://wordpress
-      WORDPRESS_USER: /run/secrets/wp_username
-      WORDPRESSAPPPASSWORD: /run/secrets/wp_password
+      WORDPRESS_USER: ${WP_USERNAME}
+      WORDPRESSAPPPASSWORD: ${WP_APP_PASSWORD}
       REDIS_URL: redis://redis:6379/0
       COMFYUI_URL: http://127.0.0.1:8188
     depends_on:
@@ -58,9 +58,9 @@ services:
     container_name: celery-worker
     restart: always
     environment:
-      WORDPRESS_URL: http://wordpress:8080
-      WORDPRESS_USER: /run/secrets/wp_username
-      WORDPRESSAPPPASSWORD: /run/secrets/wp_password
+      WORDPRESS_URL: http://wordpress:80
+      WORDPRESS_USER: ${WP_USERNAME}
+      WORDPRESSAPPPASSWORD: ${WP_APP_PASSWORD}
       REDIS_URL: redis://redis:6379/0
       COMFYUI_URL: http://127.0.0.1:8188
     depends_on:
