@@ -11,7 +11,7 @@ services:
     ports:
       - "0.0.0.0:80:80"
     volumes:
-      - /opt/wp-comfy/wp-data:/var/www/html
+      - /opt/wp-comfy/wordpress:/var/www/html
 
   db:
     image: mariadb:10.6
