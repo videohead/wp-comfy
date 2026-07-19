@@ -1,7 +1,7 @@
 /*M!999999\- enable the sandbox mode */ 
 -- MariaDB dump 10.19  Distrib 10.6.27-MariaDB, for debian-linux-gnu (aarch64)
 --
--- Host: localhost    Database: activema_wpcomfy
+-- Host: localhost    Database: wordpress
 -- ------------------------------------------------------
 -- Server version	10.6.27-MariaDB-ubu2204
 

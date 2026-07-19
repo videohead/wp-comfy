@@ -36,17 +36,16 @@ if (file_exists($envPath)) {
 }
 
 // ** Database settings - You can get this info from your web host ** //
-/** The name of the database for WordPress */
-define( 'DB_NAME',     getenv('WP_DATABASE_NAME') ?: 'wordpress' );
+define( 'DB_NAME', 'wordpress' );
 
 /** Database username */
-define( 'DB_USER',     getenv('WP_DATABASE_USERNAME') ?: 'root' );
+define( 'DB_USER', 'wordpress' );
 
 /** Database password */
-define( 'DB_PASSWORD', getenv('WP_DATABASE_PASSWORD') ?: '' );
+define( 'DB_PASSWORD', 'wordpress' );
 
 /** Database hostname */
-define( 'DB_HOST',     getenv('DB_HOST') ?: 'db' );
+define( 'DB_HOST', 'database' );
 
 /** Database charset to use in creating database tables. */
 define( 'DB_CHARSET', 'utf8mb4' );

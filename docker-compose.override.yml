@@ -1,0 +1,9 @@
+services:
+  python-orchestrator:
+    build:
+      context: ./orchestrator
+      dockerfile: Dockerfile
+  celery-worker:
+    build:
+      context: ./orchestrator
+      dockerfile: Dockerfile

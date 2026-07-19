@@ -5,3 +5,7 @@ redis
 requests
 pydantic
 python-dotenv
+pytest
+pytest-mock
+responses
+httpx2
