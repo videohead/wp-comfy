@@ -23,6 +23,44 @@ lando ssh -s app "pip list | grep pytest"
 - Test files: `/app/orchestrator/tests/`
 - Prompts file: `/app/orchestrator/tests/ltx23-prompts.txt`
 
+## Editing PHP Files (appserver)
+
+PHP files run inside the Lando `appserver` service (WordPress recipe, PHP 8.2). The WordPress webroot is **mounted from the host**, so you can edit PHP files directly on your host machine and changes are reflected immediately in the container:
+
+### File Locations
+- **Host path**: `/opt/wp-comfy/wordpress/` — edit PHP files here (VS Code, vim, etc.)
+- **Container path**: `/app/wordpress/` — where appserver serves them from
+
+### Editing Workflow
+1. Edit PHP files on the host at `/opt/wp-comfy/wordpress/` using your editor
+2. Changes are automatically synced into the `appserver` container via volume mount
+3. No rebuild or restart needed — changes take effect immediately
+
+### SSH into appserver (for debugging)
+```bash
+# SSH into the appserver container
+lando ssh -s appserver
+
+# Run WP-CLI inside appserver
+lando exec appserver -- wp plugin list --allow-root --path=/app/wordpress
+lando exec appserver -- wp option get siteurl --allow-root --path=/app/wordpress
+
+# View PHP error logs (if configured)
+lando ssh -s appserver "tail -f /var/log/apache2/error.log"
+```
+
+### WP-CLI Tools
+```bash
+# List users
+lando exec appserver -- wp user list --allow-root --path=/app/wordpress
+
+# Reset admin password
+lando exec appserver -- wp user update admin --user_pass='newpassword' --allow-root --path=/app/wordpress
+
+# Run any WP-CLI command
+lando exec appserver -- wp <command> --allow-root --path=/app/wordpress
+```
+
 ## LTX-2.3 Integration Tests
 
 Location: `/app/orchestrator/tests/test_ltx23_video_generation.py`
