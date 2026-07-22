@@ -1,64 +1,290 @@
 {
+  "model": "LTX-2.3",
+  "description": "LTX Video 2.3 configuration for WordPress post asset generation",
   "nodes": [
     {
       "id": 1,
-      "type": "LoadImage",
-      "name": "PoseImage",
+      "type": "CheckpointLoaderSimple",
+      "name": "LTX23Checkpoint",
       "inputs": {
-        "image_path": "__POSE_IMAGE_PATH__"
+        "ckpt_name": "__CHECKPOINT_PATH__"
       }
     },
     {
       "id": 2,
-      "type": "LoadImage",
-      "name": "StyleImage",
-      "inputs": {
-        "image_path": "__STYLE_IMAGE_PATH__"
-      }
-    },
-    {
-      "id": 3,
-      "type": "TextPrompt",
+      "type": "CLIPTextEncode",
       "name": "PositivePrompt",
       "inputs": {
         "text": "__POSITIVE_PROMPT__"
       }
     },
     {
-      "id": 4,
-      "type": "TextPrompt",
+      "id": 3,
+      "type": "CLIPTextEncode",
       "name": "NegativePrompt",
       "inputs": {
         "text": "__NEGATIVE_PROMPT__"
       }
     },
     {
-      "id": 5,
-      "type": "VideoGenerationModel",
-      "name": "VideoModel",
+      "id": 4,
+      "type": "EmptyLTXVLatentVideo",
+      "name": "EmptyLTXVLatent",
       "inputs": {
-        "positive_prompt": 3,
-        "negative_prompt": 4,
-        "pose_image": 1,
-        "style_image": 2,
-        "fps": "__FPS__",
         "width": "__RESOLUTION_X__",
         "height": "__RESOLUTION_Y__",
-        "num_frames": "__NUM_FRAMES__"
+        "length": "__NUM_FRAMES__",
+        "latents_size": "LTX-2.3",
+        "batch_size": 1
+      }
+    },
+    {
+      "id": 5,
+      "type": "KSamplerAdvanced",
+      "name": "KSampler",
+      "inputs": {
+        "seed": "__SEED__",
+        "steps": "__STEPS__",
+        "cfg": "__CFG_SCALE__",
+        "sampler_name": "euler",
+        "scheduler": "normal",
+        "denoise": 1.0,
+        "model": ["1", 0],
+        "positive": ["2", 0],
+        "negative": ["3", 0],
+        "latent_image": ["4", 0]
       }
     },
     {
       "id": 6,
-      "type": "SaveVideo",
+      "type": "VAEDecode",
+      "name": "VAEDecode",
+      "inputs": {
+        "samples": ["5", 0],
+        "vae": ["1", 1]
+      }
+    },
+    {
+      "id": 7,
+      "type": "SaveImage",
       "name": "SaveVideo",
       "inputs": {
-        "video": 5,
-        "output_path": "__OUTPUT_VIDEO_PATH__",
-        "format": "mp4"
+        "images": ["6", 0],
+        "fps": "__FPS__",
+        "format": "video/h264-mp4",
+        "method": "secure",
+        "filename_prefix": "__OUTPUT_FILENAME_PREFIX__"
       }
     }
   ],
   "outputs": {
     "video_path": "__OUTPUT_VIDEO_PATH__"
+  },
+  "fields": {
+    "checkpoint_path": {
+      "id": 1,
+      "input_key": "ckpt_name",
+      "type": "string",
+      "label": "Checkpoint Path",
+      "description": "Path to LTX-2.3 checkpoint file (ltxv_2.3.safetensors)",
+      "default": "/models/ltx-video/ltxv_2.3.safetensors",
+      "required": true
+    },
+    "positive_prompt": {
+      "id": 2,
+      "input_key": "text",
+      "type": "textarea",
+      "label": "Positive Prompt",
+      "description": "Text description of the video to generate (supports markdown from WordPress post content)",
+      "default": "",
+      "required": true
+    },
+    "negative_prompt": {
+      "id": 3,
+      "input_key": "text",
+      "type": "textarea",
+      "label": "Negative Prompt",
+      "description": "What to avoid in the generated video",
+      "default": "",
+      "required": false
+    },
+    "resolution_x": {
+      "id": 4,
+      "input_key": "width",
+      "type": "number",
+      "label": "Width (Resolution X)",
+      "description": "Output video width in pixels (LTX-2.3 supports 768x512, 1280x704, etc.)",
+      "default": 768,
+      "min": 256,
+      "max": 1536,
+      "step": 64,
+      "required": true
+    },
+    "resolution_y": {
+      "id": 4,
+      "input_key": "height",
+      "type": "number",
+      "label": "Height (Resolution Y)",
+      "description": "Output video height in pixels",
+      "default": 512,
+      "min": 256,
+      "max": 1536,
+      "step": 64,
+      "required": true
+    },
+    "num_frames": {
+      "id": 4,
+      "input_key": "length",
+      "type": "number",
+      "label": "Number of Frames",
+      "description": "Video length in frames (LTX-2.3 supports up to 133 frames)",
+      "default": 97,
+      "min": 1,
+      "max": 133,
+      "required": true
+    },
+    "fps": {
+      "id": 7,
+      "input_key": "fps",
+      "type": "number",
+      "label": "FPS",
+      "description": "Frames per second for output video (LTX-2.3 native is 25 fps)",
+      "default": 25,
+      "min": 1,
+      "max": 60,
+      "required": true
+    },
+    "steps": {
+      "id": 5,
+      "input_key": "steps",
+      "type": "number",
+      "label": "Sampling Steps",
+      "description": "Number of denoising steps (32 recommended for LTX-2.3)",
+      "default": 32,
+      "min": 1,
+      "max": 100,
+      "required": true
+    },
+    "cfg_scale": {
+      "id": 5,
+      "input_key": "cfg",
+      "type": "number",
+      "label": "CFG Scale (Guidance)",
+      "description": "Classifier-free guidance scale (LTX-2.3 recommended: 4.0-5.0)",
+      "default": 4.5,
+      "min": 1.0,
+      "max": 20.0,
+      "step": 0.1,
+      "required": true
+    },
+    "seed": {
+      "id": 5,
+      "input_key": "seed",
+      "type": "number",
+      "label": "Seed",
+      "description": "Random seed for reproducible generation (use -1 for random)",
+      "default": 42,
+      "min": -1,
+      "max": 999999999,
+      "required": false
+    },
+    "output_filename_prefix": {
+      "id": 7,
+      "input_key": "filename_prefix",
+      "type": "string",
+      "label": "Output Filename Prefix",
+      "description": "Prefix for the output video filename (e.g., ltx23_post_{post_id})",
+      "default": "ltx23_post",
+      "required": false
+    },
+    "output_video_path": {
+      "type": "string",
+      "label": "Output Video Path",
+      "description": "Final output video file path",
+      "is_output": true,
+      "required": false
+    },
+    "lora_enabled": {
+      "id": 10,
+      "input_key": "lora_enabled",
+      "type": "boolean",
+      "label": "Enable LoRA",
+      "description": "Toggle to apply a LoRA to the LTX-2.3 model",
+      "default": false,
+      "required": false
+    },
+    "lora_name": {
+      "id": 10,
+      "input_key": "lora_name",
+      "type": "select_or_input",
+      "label": "LoRA Name",
+      "description": "Select an available LoRA or enter a custom LoRA name (e.g., motion_blur_ltx23.safetensors)",
+      "options": [
+        { "label": "None", "value": "" },
+        { "label": "motion_blur_ltx23.safetensors", "value": "motion_blur_ltx23" },
+        { "label": "style_cartoon_ltx23.safetensors", "value": "style_cartoon_ltx23" },
+        { "label": "cinematic_motion_ltx23.safetensors", "value": "cinematic_motion_ltx23" },
+        { "label": "custom...", "value": "__CUSTOM__" }
+      ],
+      "default": "",
+      "allow_custom_input": true,
+      "required": false
+    },
+    "lora_path": {
+      "id": 10,
+      "input_key": "lora_path",
+      "type": "string",
+      "label": "LoRA Path (Custom)",
+      "description": "Full path to a custom LoRA file if using a non-standard LoRA",
+      "default": "",
+      "placeholder": "/models/loras/custom_lora.safetensors",
+      "required": false,
+      "conditional": { "field": "lora_name", "value": "__CUSTOM__" }
+    },
+    "lora_weight": {
+      "id": 10,
+      "input_key": "lora_weight",
+      "type": "number",
+      "label": "LoRA Weight",
+      "description": "Strength of the LoRA application (1.0 = full strength, 0.0 = disabled)",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 2.0,
+      "step": 0.05,
+      "required": false
+    }
+  },
+  "image_to_video_fields": {
+    "pose_image_path": {
+      "id": 8,
+      "input_key": "image_path",
+      "type": "file",
+      "label": "Pose/Reference Image",
+      "description": "Reference image for image-to-video mode (controls composition)",
+      "required": false
+    },
+    "motion_bucket_id": {
+      "id": 9,
+      "input_key": "motion_bucket_id",
+      "type": "number",
+      "label": "Motion Bucket ID",
+      "description": "Controls motion intensity in image-to-video mode (1=static, 255=max motion, 127 recommended)",
+      "default": 127,
+      "min": 1,
+      "max": 255,
+      "required": false
+    },
+    "fusion_beta": {
+      "id": 9,
+      "input_key": "fusion_beta",
+      "type": "number",
+      "label": "Fusion Beta",
+      "description": "Controls temporal consistency in image-to-video mode (0.0-1.0)",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01,
+      "required": false
+    }
   }
 }

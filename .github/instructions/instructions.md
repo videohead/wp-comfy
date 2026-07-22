@@ -20,7 +20,7 @@ WordPress (final video embedded)
 - Orchestrator app: /opt/wp-comfy/orchestrator/app.py
 - Celery tasks: /opt/wp-comfy/orchestrator/tasks.py
 - Orchestrator Docker build context: /opt/wp-comfy/orchestrator (used by docker-compose)
-- Docker Compose (project root): /opt/wp-comfy/docker-compose.yaml
+- Docker Compose (project root): /opt/wp-comfy/docker-compose.yaml and Lando file
 
 From docker-compose.yaml the main services are:
 
@@ -169,6 +169,51 @@ docker compose up -d --build
 - Visit WordPress at `http://localhost` and the orchestrator at `http://localhost:8000` (or as mapped in your environment).
 
 When writing tests, prefer unit tests with mocked HTTP calls and only create a small number of integration tests that spin up containers (use CI or a developer machine for those).
+
+---
+
+**Lando development environment**
+
+The orchestrator runs inside a Lando Python 3.11 service (`app`). Use `lando ssh` to access it:
+
+```bash
+# SSH into the orchestrator container
+lando ssh -s app
+
+# Run pytest inside the container
+lando ssh -s app "python -m pytest /app/orchestrator/tests/test_ltx23_video_generation.py -v"
+
+# Install packages in the container
+lando ssh -s app "pip install <package>"
+
+# Check installed packages
+lando ssh -s app "pip list | grep pytest"
+```
+
+**Important paths inside the Lando container:**
+- Orchestrator code: `/app/orchestrator/` (mounted from host `/opt/wp-comfy/orchestrator/`)
+- Test files: `/app/orchestrator/tests/`
+- Prompts file: `/app/orchestrator/tests/ltx23-prompts.txt`
+
+**LTX-2.3 integration tests**
+
+The LTX-2.3 video generation test suite is at `/app/orchurator/tests/test_ltx23_video_generation.py`. It tests:
+
+1. `test_01_submit_workflow_returns_prompt_id` — validates workflow submission to ComfyUI
+2. `test_02_generate_cinematic_video` — full end-to-end video generation with cinematic prompt
+3. `test_03_generate_nature_video` — generation with nature scene prompt
+4. `test_04_compare_with_orchestrator_workflow` — compares direct API vs orchestrator workflow
+5. `test_05_lora_enabled_workflow` — tests LoRA-enabled generation
+
+Prerequisites:
+- ComfyUI must be running and accessible at `COMFYUI_URL` (default `http://127.0.0.1:8188`)
+- LTX-2.3 checkpoint installed at `/models/ltx-video/ltxv_2.3.safetensors` in ComfyUI
+- Real prompts loaded from `ltx23-prompts.txt` (falls back to defaults if empty)
+
+Run command:
+```bash
+lando ssh -s app "python -m pytest /app/orchestrator/tests/test_ltx23_video_generation.py -v"
+```
 
 ---
 

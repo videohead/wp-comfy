@@ -1,22 +1,35 @@
-name: wordpresscomfy
+name: videohead
 
 recipe: wordpress
 config:
+  webroot: wordpress
   php: '8.2'
   composer_version: '2'
 
 services:
+  appserver:
+    portforward: true
+    ssl: true
+    sslExpose: true
+    proxy:
+      - "videohead.duckdns.org"
+    overrides:
+      ports:
+        - "127.0.0.1:18080:80"
+        - "127.0.0.1:18443:443"
   redis-db:
     type: redis
     portforwarding: true
   app:
     type: python:3.11
     port: 8000
+    portforward: 8000
     command: cd /app/orchestrator && pip install -r requirements.txt && celery -A tasks.celery_app worker --loglevel=info & uvicorn app:app --host 0.0.0.0 --port 8000
     environment:
-      WORDPRESS_URL: https://wordpresscomfy.lndo.site
+      WORDPRESS_URL: https://videohead.duckdns.org
       WORDPRESS_USER: ${WP_USERNAME}
       WORDPRESSAPPPASSWORD: ${WP_APP_PASSWORD}
+      REDIS_URL: redis://redis-db:6379/0
       COMFYUI_URL: http://127.0.0.1:8188
 
 tooling:
