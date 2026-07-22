@@ -714,10 +714,14 @@ const md5 = __webpack_require__(/*! md5 */ "./node_modules/md5/md5.js");
         // Replace names for JSX counterparts.
         name = getJSXName(name);
 
-        // Convert JSON values.
+        // Convert JSON values. Ignore values that merely start with a
+        // JSON-like character but aren't valid JSON (e.g. an oEmbed
+        // title beginning with "[" or "{").
         const c1 = value.charAt(0);
         if (c1 === '[' || c1 === '{') {
-          value = JSON.parse(value);
+          try {
+            value = JSON.parse(value);
+          } catch (err) {}
         }
 
         // Convert bool values.
@@ -2281,6 +2285,54 @@ const useBlockEditorInspectorSidebarOpen = () => {
 };
 
 /**
+ * Converts serialized Google Map field values from JSON strings back into
+ * objects so they aren't double-encoded when the block's data is stored as
+ * a JSON block attribute. Google Map fields keep their value as a JSON
+ * string in a hidden input, which acf.serialize() would otherwise pass
+ * through as a string.
+ *
+ * @param {Object} $form          The block form jQuery element that was serialized.
+ * @param {Object} serializedData The data returned by acf.serialize(); modified in place.
+ * @param {string} clientId       The block client ID.
+ * @return {void}
+ */
+function deserializeGoogleMapValues($form, serializedData, clientId) {
+  const inputPrefix = `acf-block_${clientId}`;
+  $form.find('.acf-field-google-map input[type="hidden"][name]').each(function () {
+    if (this.name.indexOf(inputPrefix) !== 0) {
+      return;
+    }
+
+    // Extract the bracketed key path, e.g. "[field_abc][field_def]" -> [ 'field_abc', 'field_def' ].
+    const keyPath = this.name.slice(inputPrefix.length).match(/([^\[\]])+/g);
+    if (!keyPath) {
+      return;
+    }
+
+    // Walk the serialized data down to the parent of the leaf key.
+    let parent = serializedData;
+    for (let i = 0; i < keyPath.length - 1; i++) {
+      if (parent === null || typeof parent !== 'object') {
+        return;
+      }
+      parent = parent[keyPath[i]];
+    }
+    if (parent === null || typeof parent !== 'object') {
+      return;
+    }
+    const leafKey = keyPath[keyPath.length - 1];
+    if (typeof parent[leafKey] === 'string') {
+      try {
+        const parsedValue = JSON.parse(parent[leafKey]);
+        if (typeof parsedValue === 'object' && parsedValue !== null) {
+          parent[leafKey] = parsedValue;
+        }
+      } catch (err) {}
+    }
+  });
+}
+
+/**
  * Main BlockEdit component wrapper
  * Manages block data fetching and initial setup
  *
@@ -2923,6 +2975,7 @@ function BlockEditInner(props) {
     const $form = $(acfFormRef?.current);
     const serializedData = acf.serialize($form, `acf-block_${clientId}`);
     if (serializedData) {
+      deserializeGoogleMapValues($form, serializedData, clientId);
       setTheSerializedAcfData(JSON.stringify(serializedData));
     } else {
       setUserHasInteractedWithForm(false);
@@ -3059,6 +3112,7 @@ function BlockEditInner(props) {
     onChange: function ($form) {
       const serializedData = acf.serialize($form, `acf-block_${clientId}`);
       if (serializedData) {
+        deserializeGoogleMapValues($form, serializedData, clientId);
         setTheSerializedAcfData(JSON.stringify(serializedData));
       }
     },
@@ -4282,9 +4336,13 @@ function parseAttribute(attribute) {
         break;
       }
       attrName = getJSXNameReplacement(attrName);
+      // Ignore values that merely start with a JSON-like character but
+      // aren't valid JSON (e.g. an oEmbed title beginning with "[" or "{").
       const firstChar = attrValue.charAt(0);
       if (firstChar === '[' || firstChar === '{') {
-        attrValue = JSON.parse(attrValue);
+        try {
+          attrValue = JSON.parse(attrValue);
+        } catch (err) {}
       }
       if (attrValue === 'true' || attrValue === 'false') {
         attrValue = attrValue === 'true';

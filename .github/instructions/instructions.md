@@ -17,27 +17,44 @@ WordPress (final video embedded)
 
 **Repository/Service locations**
 
+- The project is built with lando, ALL Dockerfile and docker-compose files are leghacy and should not be seen as authoritative.
 - Orchestrator app: /opt/wp-comfy/orchestrator/app.py
 - Celery tasks: /opt/wp-comfy/orchestrator/tasks.py
-- Orchestrator Docker build context: /opt/wp-comfy/orchestrator (used by docker-compose)
-- Docker Compose (project root): /opt/wp-comfy/docker-compose.yaml and Lando file
+- Orchestrator tests: /opt/wp-comfy/orchestrator/tests
 
-From docker-compose.yaml the main services are:
+The services are:
 
-- `wordpress`: image `wordpress:7.0-php8.2-apache`, webroot mounted from `/opt/wp-comfy/wordpress`, port 80 host mapped
-- `db`: image `mariadb:10.6`, data persisted to `/opt/wp-comfy/db-data`, initial dump `backup.sql`
-- `redis`: image `redis:7`, used as Celery broker/backend
-- `python-orchestrator`: built from `./orchestrator` Dockerfile, exposes port 8000 (FastAPI)
-- `celery-worker`: built from same orchestrator context and runs the Celery worker
+- `appserver`: Lando's wordpress recipe (PHP 8.2), webroot at `/app/wordpress` (mounted from `/opt/wp-comfy/wordpress`), dynamic ports provided by lando
+- `database`: Lando's database service, data persisted to `/opt/wp-comfy/db-data`, initial dump `backup.sql`
+- `redis-db`: Lando's redis service, used as Celery broker/backend
+- `app`: Lando's Python 3.11 service, port 8000 (orchestrator + celery worker)
+
+**Important paths inside the Lando container:**
+- WordPress root: `/app/wordpress` (mounted from host `/opt/wp-comfy/wordpress`)
+- Orchestrator code: `/app/orchestrator/` (mounted from host `/opt/wp-comfy/orchestrator/`)
+- Test files: `/app/orchestrator/tests/`
+- Database data: `/app/database` (persisted to host `/opt/wp-comfy/db-data`)
+
+**WP-CLI usage:**
+```bash
+# List users
+lando exec appserver -- wp user list --allow-root --path=/app/wordpress
+
+# Reset admin password
+lando exec appserver -- wp user update admin --user_pass='newpassword' --allow-root --path=/app/wordpress
+
+# Run any WP-CLI command
+lando wp <command> --path=/app/wordpress  # or use the wp tooling alias
+```
 
 ---
 
 **Important environment variables (used in orchestrator)**
 
-- `WORDPRESS_URL` (default in code: `http://wordpress:80` / Lando: `http://appserver`)
+- `WORDPRESS_URL` ( Lando: `http://appserver`)
 - `WP_USERNAME` / `WORDPRESS_USER`
 - `WP_APP_PASSWORD` / `WORDPRESSAPPPASSWORD`
-- `COMFYUI_URL` (default `http://127.0.0.1:8188` or `http://comfyui:8188` when in-compose)
+- `COMFYUI_URL` (default `http://127.0.0.1:8188`)
 - `REDIS_URL` (default `redis://redis:6379/0`)
 - DB-related vars are in compose for the `db` service (MARIADB_*)
 
@@ -163,7 +180,6 @@ Or monkeypatch `celery_app.send_task` to return a fake task with `id`.
 ```bash
 cp .env.example .env   # fill values
 mkdir -p /opt/wp-comfy/wordpress /opt/wp-comfy/db-data
-docker compose up -d --build
 ```
 
 - Visit WordPress at `http://localhost` and the orchestrator at `http://localhost:8000` (or as mapped in your environment).

@@ -227,7 +227,8 @@ class TestLTX23VideoGeneration:
         load_dotenv(ROOT / ".env")
 
     @pytest.fixture(scope="class")
-    def comfyui_reachable(self):
+    @classmethod
+    def comfyui_reachable(cls):
         """Check if ComfyUI is reachable before running tests."""
         import requests
 

@@ -1,0 +1,167 @@
+{
+  "ltx23_video_generation": {
+    "1": {
+      "inputs": {
+        "ckpt_name": "__CHECKPOINT_PATH__"
+      },
+      "class_type": "CheckpointLoaderSimple",
+      "_meta": {
+        "title": "Load LTX-2.3 Checkpoint"
+      }
+    },
+    "2": {
+      "inputs": {
+        "text": "__POSITIVE_PROMPT__"
+      },
+      "class_type": "CLIPTextEncode",
+      "_meta": {
+        "title": "Positive Prompt"
+      }
+    },
+    "3": {
+      "inputs": {
+        "text": "__NEGATIVE_PROMPT__"
+      },
+      "class_type": "CLIPTextEncode",
+      "_meta": {
+        "title": "Negative Prompt"
+      }
+    },
+    "4": {
+      "inputs": {
+        "width": "__RESOLUTION_X__",
+        "height": "__RESOLUTION_Y__",
+        "length": "__NUM_FRAMES__",
+        "latents_size": "LTX-2.3",
+        "batch_size": 1
+      },
+      "class_type": "EmptyLTXVLatentVideo",
+      "_meta": {
+        "title": "Empty Latent Video"
+      }
+    },
+    "5": {
+      "inputs": {
+        "seed": "__SEED__",
+        "steps": "__STEPS__",
+        "cfg": "__CFG_SCALE__",
+        "sampler_name": "euler",
+        "scheduler": "normal",
+        "denoise": 1.0,
+        "model": ["__MODEL_REF__"],
+        "positive": ["2", 0],
+        "negative": ["3", 0],
+        "latent_image": ["4", 0]
+      },
+      "class_type": "KSamplerAdvanced",
+      "_meta": {
+        "title": "KSampler Advanced"
+      }
+    },
+    "6": {
+      "inputs": {
+        "samples": ["5", 0],
+        "vae": ["1", 1]
+      },
+      "class_type": "VAEDecode",
+      "_meta": {
+        "title": "VAE Decode"
+      }
+    },
+    "7": {
+      "inputs": {
+        "images": ["6", 0],
+        "fps": "__FPS__",
+        "format": "video/h264-mp4",
+        "method": "secure",
+        "filename_prefix": "__OUTPUT_FILENAME_PREFIX__"
+      },
+      "class_type": "SaveImage",
+      "_meta": {
+        "title": "Save Video Output"
+      }
+    }
+  },
+  "ltx23_image_to_video": {
+    "1": {
+      "inputs": {
+        "ckpt_name": "__CHECKPOINT_PATH__"
+      },
+      "class_type": "CheckpointLoaderSimple",
+      "_meta": {
+        "title": "Load LTX-2.3 Checkpoint"
+      }
+    },
+    "2": {
+      "inputs": {
+        "text": "__POSITIVE_PROMPT__"
+      },
+      "class_type": "CLIPTextEncode",
+      "_meta": {
+        "title": "Positive Prompt"
+      }
+    },
+    "3": {
+      "inputs": {
+        "text": "__NEGATIVE_PROMPT__"
+      },
+      "class_type": "CLIPTextEncode",
+      "_meta": {
+        "title": "Negative Prompt"
+      }
+    },
+    "4": {
+      "inputs": {
+        "image_path": "__POSE_IMAGE_PATH__",
+        "latents_size": "LTX-2.3"
+      },
+      "class_type": "LoadImageForVideo",
+      "_meta": {
+        "title": "Load Reference Image"
+      }
+    },
+    "5": {
+      "inputs": {
+        "seed": "__SEED__",
+        "steps": "__STEPS__",
+        "cfg": "__CFG_SCALE__",
+        "sampler_name": "euler",
+        "scheduler": "normal",
+        "denoise": 1.0,
+        "model": ["__MODEL_REF__"],
+        "positive": ["2", 0],
+        "negative": ["3", 0],
+        "latent_image": ["4", 0],
+        "motion_bucket_id": "__MOTION_BUCKET_ID__",
+        "fusion_beta": "__FUSION_BETA__"
+      },
+      "class_type": "KSamplerAdvanced",
+      "_meta": {
+        "title": "KSampler Advanced (I2V)"
+      }
+    },
+    "6": {
+      "inputs": {
+        "samples": ["5", 0],
+        "vae": ["1", 1]
+      },
+      "class_type": "VAEDecode",
+      "_meta": {
+        "title": "VAE Decode"
+      }
+    },
+    "7": {
+      "inputs": {
+        "images": ["6", 0],
+        "fps": "__FPS__",
+        "format": "video/h264-mp4",
+        "method": "secure",
+        "filename_prefix": "__OUTPUT_FILENAME_PREFIX__"
+      },
+      "class_type": "SaveImage",
+      "_meta": {
+        "title": "Save Video Output"
+      }
+    }
+  }
+}
